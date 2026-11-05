@@ -1,6 +1,6 @@
 import AdminPurchase from "../models/AdminPurchaseSchema.js";
 import CustomerPurchase from "../models/CustomerPurchaseSchema.js";
-import Product from "../models/Product.js";
+import Product from "../models/product.js";
 
 // =================== Analytics & Reporting ===================
 
