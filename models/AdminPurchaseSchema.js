@@ -12,6 +12,10 @@ const adminPurchaseSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  customerPurchase: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CustomerPurchase",
+  },
   quantity: { type: Number, default: 1 },
   price: { type: Number, required: true },
   purchasedAt: { type: Date, default: Date.now },

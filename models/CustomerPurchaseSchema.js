@@ -2,6 +2,12 @@
 import mongoose from "mongoose";
 
 const customerPurchaseSchema = new mongoose.Schema({
+  customer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+    index: true,
+  },
   product: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
@@ -9,6 +15,11 @@ const customerPurchaseSchema = new mongoose.Schema({
   },
   quantity: { type: Number, default: 1 },
   price: { type: Number, required: true },
+  userInfo: {
+    address: { type: String, trim: true },
+    city: { type: String, trim: true },
+    postalCode: { type: String, trim: true },
+  },
   purchasedAt: { type: Date, default: Date.now },
 });
 

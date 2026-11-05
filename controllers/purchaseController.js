@@ -79,8 +79,11 @@ export const getAdminAnalytics = async (req, res) => {
 // Create a purchase (Customer buys a product)
 export const createPurchase = async (req, res) => {
   try {
-    const { items } = req.body; 
-    console.log("items",items)
+    const { items, userInfo } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: "Your order must contain at least one product." });
+    }
+
     const userId = req.user._id;
 
     const adminPurchases = [];
@@ -94,24 +97,26 @@ export const createPurchase = async (req, res) => {
       if (quantity > product.quantity)
         return res.status(400).json({ message: `Quantity exceeds stock for ${product.name}` });
 
-      // AdminPurchase
+      // CustomerPurchase
+      const customerPurchase = new CustomerPurchase({
+        customer: userId,
+        product: product._id,
+        quantity,
+        price: product.price * quantity,
+        userInfo,
+      });
+      await customerPurchase.save();
+      customerPurchases.push(customerPurchase);
+
       const adminPurchase = new AdminPurchase({
         product: product._id,
         customer: userId,
+        customerPurchase: customerPurchase._id,
         quantity,
         price: product.price * quantity,
       });
       await adminPurchase.save();
       adminPurchases.push(adminPurchase);
-
-      // CustomerPurchase
-      const customerPurchase = new CustomerPurchase({
-        product: product._id,
-        quantity,
-        price: product.price * quantity,
-      });
-      await customerPurchase.save();
-      customerPurchases.push(customerPurchase);
 
       // Reduce product stock
       product.quantity -= quantity;
@@ -150,7 +155,8 @@ export const getAllAdminPurchases = async (req, res) => {
 // Get all purchases for Customer
 export const getCustomerPurchases = async (req, res) => {
   try {
-    const purchases = await CustomerPurchase.find({ })
+    const purchases = await CustomerPurchase.find({ customer: req.user._id })
+      .sort({ purchasedAt: -1 })
       .populate({
         path: "product",
         select: "name price image"
@@ -172,8 +178,15 @@ export const deletePurchaseByAdmin = async (req, res) => {
     // Delete from AdminPurchase
     await AdminPurchase.findByIdAndDelete(purchaseId);
 
-    // Delete corresponding CustomerPurchase
-    await CustomerPurchase.findOneAndDelete({ product: adminPurchase.product });
+    // Keep the customer history in sync without affecting another customer's record.
+    if (adminPurchase.customerPurchase) {
+      await CustomerPurchase.findByIdAndDelete(adminPurchase.customerPurchase);
+    } else {
+      await CustomerPurchase.findOneAndDelete({
+        product: adminPurchase.product,
+        customer: adminPurchase.customer,
+      });
+    }
 
     res.json({ message: "Purchase deleted by admin" });
   } catch (err) {
@@ -186,7 +199,10 @@ export const deletePurchaseByCustomer = async (req, res) => {
   try {
     const { purchaseId } = req.params;
 
-    const purchase = await CustomerPurchase.findById(purchaseId);
+    const purchase = await CustomerPurchase.findOne({
+      _id: purchaseId,
+      customer: req.user._id,
+    });
     if (!purchase) return res.status(404).json({ message: "Purchase not found" });
 
     await CustomerPurchase.findByIdAndDelete(purchaseId);
