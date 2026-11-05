@@ -16,6 +16,7 @@ const customerPurchaseSchema = new mongoose.Schema({
   quantity: { type: Number, default: 1 },
   price: { type: Number, required: true },
   userInfo: {
+    phone: { type: String, trim: true },
     address: { type: String, trim: true },
     city: { type: String, trim: true },
     postalCode: { type: String, trim: true },

@@ -83,6 +83,9 @@ export const createPurchase = async (req, res) => {
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: "Your order must contain at least one product." });
     }
+    if (!userInfo?.phone?.trim()) {
+      return res.status(400).json({ message: "A contact phone number is required for delivery." });
+    }
 
     const userId = req.user._id;
 
@@ -142,6 +145,10 @@ export const getAllAdminPurchases = async (req, res) => {
       .populate({
         path: "customer",
         select: "name email"
+      })
+      .populate({
+        path: "customerPurchase",
+        select: "userInfo"
       });
 
     res.json(purchases);
