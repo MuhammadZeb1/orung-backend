@@ -40,8 +40,13 @@ export const googleLogin = async (req, res) => {
         role: user.role,
       },
     });
-  } catch (err) {
-    console.error(err);
-    res.status(400).json({ message: "Google login failed" });
-  }
+  }catch (error) {
+  console.error("Google OAuth Error:", error);
+  console.error("Error message:", error.message);
+
+  return res.status(400).json({
+    message: "Google login failed",
+    error: error.message,
+  });
+}
 };
